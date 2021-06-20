@@ -4,8 +4,8 @@ import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import me.lazmaid.kraph.lang.Argument
 import me.lazmaid.kraph.lang.Field
-import me.lazmaid.kraph.lang.SelectionSet
 import me.lazmaid.kraph.lang.PrintFormat
+import me.lazmaid.kraph.lang.SelectionSet
 import me.lazmaid.kraph.lang.relay.CursorConnection
 import me.lazmaid.kraph.lang.relay.Edges
 import me.lazmaid.kraph.lang.relay.InputArgument

@@ -1,7 +1,10 @@
 package me.lazmaid.kraph.test
 
-import com.natpryce.hamkrest.*
+import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.assertion.assertThat
+import com.natpryce.hamkrest.equalTo
+import com.natpryce.hamkrest.isA
+import com.natpryce.hamkrest.throws
 import me.lazmaid.kraph.Kraph
 import me.lazmaid.kraph.NoFieldsInSelectionSetException
 import me.lazmaid.kraph.NoSuchFragmentException

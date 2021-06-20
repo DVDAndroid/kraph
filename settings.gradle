@@ -1,4 +1,0 @@
-rootProject.name = 'kraph'
-include 'core'
-include 'sample'
-

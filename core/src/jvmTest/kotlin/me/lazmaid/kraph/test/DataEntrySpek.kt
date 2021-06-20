@@ -6,7 +6,6 @@ import me.lazmaid.kraph.lang.DataEntry
 import me.lazmaid.kraph.lang.PrintFormat
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.describe
-import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
 
 class DataEntrySpek : Spek({
