@@ -3,7 +3,7 @@ plugins {
     `maven-publish`
 }
 group = "com.dvdandroid.kraph"
-version = "0.6.1-kmp"
+version = "0.6.1.1-kmp"
 
 kotlin {
     jvm()

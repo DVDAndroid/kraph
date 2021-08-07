@@ -38,6 +38,7 @@ internal abstract class GraphQLNode {
                 is List<*>  -> convertToArrayData(value)
                 is Map<*,*> -> convertToObjectData(value as Map<String, *>)
                 is Enum<*>  -> DataEntry.EnumData(value)
+                null        -> DataEntry.NullData
                 else        -> throw RuntimeException("Unsupported Type: $value")
             }
 }

@@ -56,4 +56,8 @@ internal sealed class DataEntry {
     class EnumData(private val value: Enum<*>): DataEntry() {
         override fun print(format: PrintFormat): String = value.name
     }
+
+    object NullData : DataEntry() {
+        override fun print(format: PrintFormat): String = "null"
+    }
 }
