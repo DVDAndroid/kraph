@@ -1,8 +1,8 @@
-@file:Suppress("ClassName")
+@file:Suppress("unused")
 
 import AddressGraphQLBuilder.Companion.address
 import UserGraphQLBuilder.Companion.user
-import annotations.GraphQLType
+import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 import me.lazmaid.kraph.Kraph
 
 fun example(): String = Kraph {

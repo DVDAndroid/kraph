@@ -1,4 +1,6 @@
-import annotations.GraphQLType
+package com.dvdandroid.kraph.ksp
+
+import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.*
 import com.google.devtools.ksp.symbol.*
@@ -11,7 +13,6 @@ import me.lazmaid.kraph.Kraph
 class AnnotationProcessor(
   private val codeGenerator: CodeGenerator,
   private val logger: KSPLogger,
-  private val options: Map<String, String>,
 ) : SymbolProcessor {
 
   private lateinit var builtIns: KSBuiltIns
