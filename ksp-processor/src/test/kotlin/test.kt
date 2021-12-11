@@ -14,6 +14,7 @@ class Test {
 
   private val classes = SourceFile.kotlin(
     "classes.kt", """
+import com.dvdandroid.kraph.ksp.annotations.GraphQLInputType
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 
 @GraphQLType
@@ -28,6 +29,13 @@ data class User(
 data class Address(
   val city: String,
   val cap: Int,
+)
+
+@GraphQLInputType
+data class Input(
+  val name: String,
+  val email: String,
+  val test: String? = null,
 )
     """
   )

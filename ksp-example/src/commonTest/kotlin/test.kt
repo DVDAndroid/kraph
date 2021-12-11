@@ -4,7 +4,7 @@ import kotlin.test.assertEquals
 class Test {
 
   @Test
-  fun run() {
+  fun builder() {
     assertEquals(expected = """query {
   user {
     id
@@ -17,6 +17,17 @@ class Test {
     city
   }
 }""", actual = example())
+  }
+
+  @Test
+  fun asHashMap() {
+    assertEquals(
+      actual = hashMapOf(
+        "name" to "name",
+        "email" to "email",
+      ),
+      expected = InputUser("name", "email").asHashMap(),
+    )
   }
 
 }
