@@ -40,4 +40,5 @@ data class InputUser(
   val name: String,
   val email: String,
   val test: String? = null,
+  val number: Int?,
 )

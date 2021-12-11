@@ -4,6 +4,7 @@ import com.tschuchort.compiletesting.SourceFile
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
+import java.io.File
 import kotlin.test.Test
 
 class Test {
@@ -36,6 +37,7 @@ data class Input(
   val name: String,
   val email: String,
   val test: String? = null,
+  val number: Int?
 )
     """
   )
@@ -54,18 +56,18 @@ data class Input(
     workingDir = temporaryFolder.root
   }.compile().assertions()
 
-//  private fun KotlinCompilation.Result.sourceFor(fileName: String): String {
-//    return kspGeneratedSources().find { it.name == fileName }
-//      ?.readText()
-//      ?: throw IllegalArgumentException("Could not find file $fileName in ${kspGeneratedSources()}")
-//  }
-//
-//  private fun KotlinCompilation.Result.kspGeneratedSources(): List<File> {
-//    val kspWorkingDir = outputDirectory.parentFile.resolve("ksp")
-//    val kspGeneratedDir = kspWorkingDir.resolve("sources")
-//    val kotlinGeneratedDir = kspGeneratedDir.resolve("kotlin")
-//    val javaGeneratedDir = kspGeneratedDir.resolve("java")
-//    return kotlinGeneratedDir.walk().toList() + javaGeneratedDir.walk().toList()
-//  }
+  private fun KotlinCompilation.Result.sourceFor(fileName: String): String {
+    return kspGeneratedSources().find { it.name == fileName }
+      ?.readText()
+      ?: throw IllegalArgumentException("Could not find file $fileName in ${kspGeneratedSources()}")
+  }
+
+  private fun KotlinCompilation.Result.kspGeneratedSources(): List<File> {
+    val kspWorkingDir = outputDirectory.parentFile.resolve("ksp")
+    val kspGeneratedDir = kspWorkingDir.resolve("sources")
+    val kotlinGeneratedDir = kspGeneratedDir.resolve("kotlin")
+    val javaGeneratedDir = kspGeneratedDir.resolve("java")
+    return kotlinGeneratedDir.walk().toList() + javaGeneratedDir.walk().toList()
+  }
 
 }

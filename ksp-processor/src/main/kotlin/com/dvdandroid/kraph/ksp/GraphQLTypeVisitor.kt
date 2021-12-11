@@ -47,7 +47,7 @@ internal class GraphQLTypeVisitor(
   override fun visitPropertyDeclaration(property: KSPropertyDeclaration, data: Unit) {
     val ksType = property.type.resolve()
     val graphQLType = (ksType.declaration as KSClassDeclaration).isAnnotationPresent(GraphQLType::class)
-    if (ksType in okBuiltIns || graphQLType) {
+    if (ksType.makeNotNullable() in okBuiltIns || graphQLType) {
       objects += property.simpleName.asString() to ksType
     }
   }

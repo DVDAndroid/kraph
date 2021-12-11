@@ -25,8 +25,9 @@ class Test {
       actual = hashMapOf(
         "name" to "name",
         "email" to "email",
+        "number" to "123",
       ),
-      expected = InputUser("name", "email").asHashMap(),
+      expected = InputUser("name", "email", number = 123).asHashMap(),
     )
   }
 

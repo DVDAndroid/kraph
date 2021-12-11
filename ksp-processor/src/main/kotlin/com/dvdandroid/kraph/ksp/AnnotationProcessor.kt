@@ -34,7 +34,7 @@ class AnnotationProcessor(
       .forEach { it.accept(GraphQLTypeVisitor(codeGenerator, logger, okBuiltIns), Unit) }
 
     graphQLInputTypes.filter { it is KSClassDeclaration && it.validate() }
-      .forEach { it.accept(GraphQLInputTypeVisitor(codeGenerator, logger, okBuiltIns), Unit) }
+      .forEach { it.accept(GraphQLInputTypeVisitor(builtIns, codeGenerator, logger, okBuiltIns), Unit) }
 
     return (unableToProcess1 + unableToProcess2).distinct().toList()
   }

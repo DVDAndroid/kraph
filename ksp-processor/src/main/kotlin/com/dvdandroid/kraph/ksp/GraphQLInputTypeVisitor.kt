@@ -1,11 +1,13 @@
 package com.dvdandroid.kraph.ksp
 
 import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.KSBuiltIns
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ksp.writeTo
 
 internal class GraphQLInputTypeVisitor(
+  private val builtIns: KSBuiltIns,
   private val codeGenerator: CodeGenerator,
   private val logger: KSPLogger,
   private val okBuiltIns: List<KSType>,
@@ -37,14 +39,14 @@ internal class GraphQLInputTypeVisitor(
 
     if (objects.isEmpty()) return
 
-    GraphQLInputTypeFunBuilder(packageName, classDeclaration.simpleName.asString(), objects)
+    GraphQLInputTypeFunBuilder(builtIns, packageName, classDeclaration.simpleName.asString(), objects)
       .build()
       .writeTo(codeGenerator = codeGenerator, aggregating = false)
   }
 
   override fun visitPropertyDeclaration(property: KSPropertyDeclaration, data: Unit) {
     val ksType = property.type.resolve()
-    if (ksType in okBuiltIns && !ksType.isMarkedNullable) {
+    if (ksType.makeNotNullable() in okBuiltIns) {
       objects += property.simpleName.asString() to ksType
     }
   }
