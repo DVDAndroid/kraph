@@ -7,7 +7,7 @@ import org.junit.rules.TemporaryFolder
 import java.io.File
 import kotlin.test.Test
 
-class Test {
+class ProcessorTest {
 
   @Rule
   @JvmField
@@ -15,6 +15,7 @@ class Test {
 
   private val classes = SourceFile.kotlin(
     "classes.kt", """
+import com.dvdandroid.kraph.ksp.annotations.GraphQLFieldIgnore
 import com.dvdandroid.kraph.ksp.annotations.GraphQLInputType
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 
@@ -24,6 +25,8 @@ data class User(
   val name: String,
   val email: String,
   val address: Address,
+  @GraphQLFieldIgnore
+  val ignored: String,
 )
 
 @GraphQLType
@@ -37,7 +40,9 @@ data class Input(
   val name: String,
   val email: String,
   val test: String? = null,
-  val number: Int?
+  val number: Int?,
+  @GraphQLFieldIgnore
+  val ignored: String,
 )
     """
   )

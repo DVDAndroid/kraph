@@ -1,5 +1,6 @@
 package com.dvdandroid.kraph.ksp
 
+import com.dvdandroid.kraph.ksp.annotations.GraphQLFieldIgnore
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -45,6 +46,8 @@ internal class GraphQLTypeVisitor(
   }
 
   override fun visitPropertyDeclaration(property: KSPropertyDeclaration, data: Unit) {
+    if (property.isAnnotationPresent(GraphQLFieldIgnore::class)) return
+
     val ksType = property.type.resolve()
     val graphQLType = (ksType.declaration as KSClassDeclaration).isAnnotationPresent(GraphQLType::class)
     if (ksType.makeNotNullable() in okBuiltIns || graphQLType) {

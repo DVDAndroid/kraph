@@ -1,7 +1,7 @@
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class Test {
+class ExampleTest {
 
   @Test
   fun builder() {

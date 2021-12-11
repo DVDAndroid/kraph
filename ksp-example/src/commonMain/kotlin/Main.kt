@@ -2,6 +2,7 @@
 
 import AddressGraphQLBuilder.Companion.address
 import UserGraphQLBuilder.Companion.user
+import com.dvdandroid.kraph.ksp.annotations.GraphQLFieldIgnore
 import com.dvdandroid.kraph.ksp.annotations.GraphQLInputType
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 import me.lazmaid.kraph.Kraph
@@ -41,4 +42,6 @@ data class InputUser(
   val email: String,
   val test: String? = null,
   val number: Int?,
+  @GraphQLFieldIgnore
+  val x: String = "X",
 )
