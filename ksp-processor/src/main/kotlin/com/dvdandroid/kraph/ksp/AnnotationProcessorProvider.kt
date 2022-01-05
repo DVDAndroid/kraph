@@ -10,5 +10,6 @@ class AnnotationProcessorProvider : SymbolProcessorProvider {
   override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor = AnnotationProcessor(
     environment.codeGenerator,
     environment.logger,
+    environment.options,
   )
 }

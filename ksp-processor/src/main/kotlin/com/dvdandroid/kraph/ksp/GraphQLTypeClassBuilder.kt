@@ -1,7 +1,11 @@
 package com.dvdandroid.kraph.ksp
 
+import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.genPackageName
+import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.pResolver
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
+import com.google.devtools.ksp.getKotlinClassByName
 import com.google.devtools.ksp.isAnnotationPresent
+import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.*
@@ -10,11 +14,13 @@ import me.lazmaid.kraph.Kraph
 
 @Suppress("PrivatePropertyName")
 internal class GraphQLTypeClassBuilder(
-  private val packageName: String,
-  private val className: String,
+  private val classDeclaration: KSClassDeclaration,
   private val objects: Map<String, KSType>,
+  private val logger: KSPLogger,
 ) {
   companion object {
+    private val generatedFiles = hashMapOf<String, String>()
+    private val excludedFuns = listOf("equals", "hashCode", "toString", "<init>")
     private val field_block_import = ClassName("me.lazmaid.kraph", "FieldBlock")
 
     private val fun_field = FunSpec.builder("field")
@@ -44,10 +50,13 @@ internal class GraphQLTypeClassBuilder(
   }
 
   fun build(): FileSpec {
+    val className = classDeclaration.simpleName.asString()
     val generatedClassName = "${className}GraphQLBuilder"
     val firstLowerCase = className.replaceFirstChar(Char::lowercase)
 
-    val className1 = ClassName(packageName, generatedClassName)
+    generatedFiles += generatedClassName to firstLowerCase
+
+    val className1 = ClassName(genPackageName, generatedClassName)
     val klass = TypeSpec.classBuilder(className1)
       .primaryConstructor(FunSpec.constructorBuilder()
         .addParameter("fieldBuilder", Kraph.FieldBuilder::class, KModifier.PRIVATE)
@@ -67,6 +76,12 @@ internal class GraphQLTypeClassBuilder(
               .defaultValue("null")
               .build()
             )
+            .addParameter(ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
+              .defaultValue("null")
+              .build())
+            .addParameter(ParameterSpec.Companion.builder("args", Map::class.parameterizedBy(String::class, Any::class).copy(nullable = true))
+              .defaultValue("null")
+              .build())
             .addParameter(ParameterSpec.builder("block", LambdaTypeName.get(
               receiver = className1,
               returnType = Unit::class.asTypeName()
@@ -74,7 +89,7 @@ internal class GraphQLTypeClassBuilder(
             .addCode(
               CodeBlock.builder().add(
                 format = """
-                  |fieldObject(name ?: %S) {
+                  |fieldObject(name ?: %S, alias, args) {
                   |   %L(this).block()
                   |}
                 """.trimMargin(),
@@ -89,23 +104,33 @@ internal class GraphQLTypeClassBuilder(
 
           if (isGraphQLType) {
             val receiverClassName = "${ksClassDeclaration.simpleName.asString()}GraphQLBuilder"
-            val receiver = ClassName(packageName, receiverClassName)
-            val extensionMethod = MemberName("$packageName.$receiverClassName.Companion", name, isExtension = true)
+            val companionObjectFunName = findCompanionFunFromClass(receiverClassName)
+
+            val receiver = ClassName(genPackageName, receiverClassName)
+            val extensionMethod = MemberName("$genPackageName.$receiverClassName.Companion", companionObjectFunName, isExtension = true)
 
             addFunction(FunSpec.builder(name)
+              .addParameter(ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
+                .defaultValue("null")
+                .build())
+              .addParameter(ParameterSpec.Companion.builder("args", Map::class.parameterizedBy(String::class, Any::class).copy(nullable = true))
+                .defaultValue("null")
+                .build())
               .addParameter(ParameterSpec.builder("block", LambdaTypeName.get(
                 receiver = receiver,
                 returnType = Unit::class.asTypeName()
               )).build())
               .returns(Unit::class)
+              .addKdoc("Builder for [${classDeclaration.qualifiedName?.asString()}.$name]")
               .addStatement(
-                "return fieldBuilder.%M(%S, block)",
+                "return fieldBuilder.%M(%S, alias, args, block)",
                 extensionMethod,
                 name,
               ).build()
             )
           } else {
             addProperty(PropertySpec.builder(name, Unit::class)
+              .addKdoc("Builder for [${classDeclaration.qualifiedName?.asString()}.$name]")
               .delegate("lazy { field(%S) }", name)
               .build()
             )
@@ -126,9 +151,23 @@ internal class GraphQLTypeClassBuilder(
         }
       }.build()
 
-    return FileSpec.builder(packageName, generatedClassName)
+    return FileSpec.builder(genPackageName, generatedClassName)
       .addType(klass)
       .build()
+  }
+
+  private fun findCompanionFunFromClass(name: String): String {
+    val klass = pResolver.getKotlinClassByName("$genPackageName.$name")
+      ?: return generatedFiles[name]
+        ?: throw IllegalStateException("Class $name not found")
+
+    return (klass.declarations.single { it.simpleName.asString() == "Companion" } as KSClassDeclaration)
+      .getAllFunctions()
+      .toList()
+      .filterNot { it.simpleName.asString() in excludedFuns }
+      .single()
+      .simpleName
+      .asString()
   }
 
 }

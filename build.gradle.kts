@@ -21,7 +21,7 @@ buildscript {
 
 subprojects {
   group = "com.dvdandroid.kraph"
-  version = "0.6.4-kmp+ksp"
+  version = "0.6.5-kmp+ksp"
 
   if ("example" !in name) {
     apply(plugin = "maven-publish")

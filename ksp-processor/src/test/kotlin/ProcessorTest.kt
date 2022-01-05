@@ -1,6 +1,7 @@
 import com.dvdandroid.kraph.ksp.AnnotationProcessorProvider
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
+import com.tschuchort.compiletesting.kspArgs
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -14,8 +15,7 @@ class ProcessorTest {
   var temporaryFolder: TemporaryFolder = TemporaryFolder()
 
   private val classes = SourceFile.kotlin(
-    "classes.kt", """
-import com.dvdandroid.kraph.ksp.annotations.GraphQLFieldIgnore
+    "classes.kt", """import com.dvdandroid.kraph.ksp.annotations.GraphQLFieldIgnore
 import com.dvdandroid.kraph.ksp.annotations.GraphQLInputType
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 
@@ -23,27 +23,23 @@ import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 data class User(
   val id: String,
   val name: String,
-  val email: String,
-  val address: Address,
+  val email: MutableList<MyType>? = mutableListOf(),
   @GraphQLFieldIgnore
   val ignored: String,
-)
+  override val x: MyType,
+) : Address
 
-@GraphQLType
-data class Address(
-  val city: String,
-  val cap: Int,
-)
+interface Address {
+  @GraphQLType
+  val x: MyType
+
+  @GraphQLFieldIgnore
+  val y: MyType
+    get() = MyType("y")
+}
 
 @GraphQLInputType
-data class Input(
-  val name: String,
-  val email: String,
-  val test: String? = null,
-  val number: Int?,
-  @GraphQLFieldIgnore
-  val ignored: String,
-)
+data class MyType(val z: String)
     """
   )
 
@@ -59,6 +55,7 @@ data class Input(
     symbolProcessorProviders = listOf(AnnotationProcessorProvider())
     inheritClassPath = true
     workingDir = temporaryFolder.root
+    kspArgs = hashMapOf("kraph.packageName" to "generated")
   }.compile().assertions()
 
   private fun KotlinCompilation.Result.sourceFor(fileName: String): String {

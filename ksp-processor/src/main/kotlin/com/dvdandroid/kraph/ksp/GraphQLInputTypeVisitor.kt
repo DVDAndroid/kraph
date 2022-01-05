@@ -1,18 +1,17 @@
 package com.dvdandroid.kraph.ksp
 
+import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.asKSClassDeclaration
+import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.okBuiltIns
 import com.dvdandroid.kraph.ksp.annotations.GraphQLFieldIgnore
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.CodeGenerator
-import com.google.devtools.ksp.processing.KSBuiltIns
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ksp.writeTo
 
 internal class GraphQLInputTypeVisitor(
-  private val builtIns: KSBuiltIns,
   private val codeGenerator: CodeGenerator,
   private val logger: KSPLogger,
-  private val okBuiltIns: List<KSType>,
 ) : KSVisitorVoid() {
   private lateinit var ksType: KSType
   private lateinit var packageName: String
@@ -41,7 +40,7 @@ internal class GraphQLInputTypeVisitor(
 
     if (objects.isEmpty()) return
 
-    GraphQLInputTypeFunBuilder(builtIns, packageName, classDeclaration.simpleName.asString(), objects)
+    GraphQLInputTypeFunBuilder(packageName, classDeclaration.simpleName.asString(), objects)
       .build()
       .writeTo(codeGenerator = codeGenerator, aggregating = false)
   }
@@ -50,7 +49,11 @@ internal class GraphQLInputTypeVisitor(
     if (property.isAnnotationPresent(GraphQLFieldIgnore::class)) return
 
     val ksType = property.type.resolve()
-    if (ksType.makeNotNullable() in okBuiltIns) {
+    val isEnum = ksType.asKSClassDeclaration().classKind == ClassKind.ENUM_CLASS
+    // todo fixme
+    val isIterable = "List" in ksType.asKSClassDeclaration().simpleName.asString()
+            || "Set" in ksType.asKSClassDeclaration().simpleName.asString()
+    if (ksType.makeNotNullable() in okBuiltIns || isEnum || isIterable) {
       objects += property.simpleName.asString() to ksType
     }
   }

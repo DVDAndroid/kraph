@@ -1,5 +1,6 @@
 package com.dvdandroid.kraph.ksp
 
+import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.okBuiltIns
 import com.dvdandroid.kraph.ksp.annotations.GraphQLFieldIgnore
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 import com.google.devtools.ksp.isAnnotationPresent
@@ -11,10 +12,8 @@ import com.squareup.kotlinpoet.ksp.writeTo
 internal class GraphQLTypeVisitor(
   private val codeGenerator: CodeGenerator,
   private val logger: KSPLogger,
-  private val okBuiltIns: List<KSType>,
 ) : KSVisitorVoid() {
   private lateinit var ksType: KSType
-  private lateinit var packageName: String
   private val objects = hashMapOf<String, KSType>()
 
   override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
@@ -31,7 +30,6 @@ internal class GraphQLTypeVisitor(
     }
 
     ksType = classDeclaration.asType(emptyList())
-    packageName = classDeclaration.packageName.asString()
 
     classDeclaration.getAllProperties()
       .forEach {
@@ -40,18 +38,47 @@ internal class GraphQLTypeVisitor(
 
     if (objects.isEmpty()) return
 
-    GraphQLTypeClassBuilder(packageName, classDeclaration.simpleName.asString(), objects)
+    GraphQLTypeClassBuilder(classDeclaration, objects, logger)
       .build()
       .writeTo(codeGenerator = codeGenerator, aggregating = false)
   }
 
   override fun visitPropertyDeclaration(property: KSPropertyDeclaration, data: Unit) {
-    if (property.isAnnotationPresent(GraphQLFieldIgnore::class)) return
+    if (property.isAnnotationPresent(GraphQLFieldIgnore::class)) {
+      logger.warn("$property is annotated with @GraphQLFieldIgnore, skipping")
+      return
+    }
 
     val ksType = property.type.resolve()
-    val graphQLType = (ksType.declaration as KSClassDeclaration).isAnnotationPresent(GraphQLType::class)
-    if (ksType.makeNotNullable() in okBuiltIns || graphQLType) {
-      objects += property.simpleName.asString() to ksType
+    val graphQLType = ksType.asKSClassDeclaration().isAnnotationPresent(GraphQLType::class)
+            || property.isAnnotationPresent(GraphQLType::class)
+            || property.findOverridee()?.isAnnotationPresent(GraphQLType::class) ?: false
+
+    val isCollection = "Set" in ksType.asKSClassDeclaration().simpleName.asString() ||
+            "List" in ksType.asKSClassDeclaration().simpleName.asString()
+
+// todo fixme
+//    val isCollection = ksType.asKSClassDeclaration()
+//      .getAllSuperTypes()
+//      .toSet()
+//      .firstOrNull { it.starProjection() in setOf(builtIns.iterableType, builtIns.arrayType) }
+
+    val ksClassListArgType = ksType.arguments.firstOrNull()?.type?.resolve()
+
+    val listAndTypeOfGraphQLType = isCollection
+            && ksClassListArgType != null
+            && ksType.arguments.size == 1
+            && (ksClassListArgType.asKSClassDeclaration().isAnnotationPresent(GraphQLType::class)
+            || ksClassListArgType.makeNotNullable() in okBuiltIns)
+
+    if (ksType.makeNotNullable() in okBuiltIns || graphQLType || listAndTypeOfGraphQLType) {
+      objects += property.simpleName.asString() to (if (listAndTypeOfGraphQLType) {
+        ksType.arguments.first().type?.resolve()!!
+      } else {
+        ksType
+      })
     }
   }
+
+  private fun KSType.asKSClassDeclaration() = declaration as KSClassDeclaration
 }
