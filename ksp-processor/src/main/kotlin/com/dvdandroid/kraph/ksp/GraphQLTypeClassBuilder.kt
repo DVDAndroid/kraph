@@ -1,9 +1,7 @@
 package com.dvdandroid.kraph.ksp
 
 import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.genPackageName
-import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.pResolver
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
-import com.google.devtools.ksp.getKotlinClassByName
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -19,8 +17,6 @@ internal class GraphQLTypeClassBuilder(
   private val logger: KSPLogger,
 ) {
   companion object {
-    private val generatedFiles = hashMapOf<String, String>()
-    private val excludedFuns = listOf("equals", "hashCode", "toString", "<init>")
     private val field_block_import = ClassName("me.lazmaid.kraph", "FieldBlock")
 
     private val fun_field = FunSpec.builder("field")
@@ -54,10 +50,9 @@ internal class GraphQLTypeClassBuilder(
     val generatedClassName = "${className}GraphQLBuilder"
     val firstLowerCase = className.replaceFirstChar(Char::lowercase)
 
-    generatedFiles += generatedClassName to firstLowerCase
-
     val className1 = ClassName(genPackageName, generatedClassName)
     val klass = TypeSpec.classBuilder(className1)
+      .addKdoc("Builder for class [${classDeclaration.qualifiedName?.asString()}]")
       .primaryConstructor(FunSpec.constructorBuilder()
         .addParameter("fieldBuilder", Kraph.FieldBuilder::class, KModifier.PRIVATE)
         .addModifiers(KModifier.PRIVATE)
@@ -104,7 +99,7 @@ internal class GraphQLTypeClassBuilder(
 
           if (isGraphQLType) {
             val receiverClassName = "${ksClassDeclaration.simpleName.asString()}GraphQLBuilder"
-            val companionObjectFunName = findCompanionFunFromClass(receiverClassName)
+            val companionObjectFunName = ksClassDeclaration.simpleName.asString().replaceFirstChar(Char::lowercase)
 
             val receiver = ClassName(genPackageName, receiverClassName)
             val extensionMethod = MemberName("$genPackageName.$receiverClassName.Companion", companionObjectFunName, isExtension = true)
@@ -135,6 +130,7 @@ internal class GraphQLTypeClassBuilder(
               .build()
             )
             addFunction(FunSpec.builder(name)
+              .addKdoc("Builder for [${classDeclaration.qualifiedName?.asString()}.$name]")
               .addParameter(ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
                 .defaultValue("null")
                 .build())
@@ -154,20 +150,6 @@ internal class GraphQLTypeClassBuilder(
     return FileSpec.builder(genPackageName, generatedClassName)
       .addType(klass)
       .build()
-  }
-
-  private fun findCompanionFunFromClass(name: String): String {
-    val klass = pResolver.getKotlinClassByName("$genPackageName.$name")
-      ?: return generatedFiles[name]
-        ?: throw IllegalStateException("Class $name not found")
-
-    return (klass.declarations.single { it.simpleName.asString() == "Companion" } as KSClassDeclaration)
-      .getAllFunctions()
-      .toList()
-      .filterNot { it.simpleName.asString() in excludedFuns }
-      .single()
-      .simpleName
-      .asString()
   }
 
 }
