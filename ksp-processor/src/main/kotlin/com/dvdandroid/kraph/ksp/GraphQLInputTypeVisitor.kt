@@ -2,7 +2,7 @@ package com.dvdandroid.kraph.ksp
 
 import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.asKSClassDeclaration
 import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.okBuiltIns
-import com.dvdandroid.kraph.ksp.annotations.GraphQLFieldIgnore
+import com.dvdandroid.kraph.ksp.annotations.GraphQLInputFieldIgnore
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
@@ -46,7 +46,10 @@ internal class GraphQLInputTypeVisitor(
   }
 
   override fun visitPropertyDeclaration(property: KSPropertyDeclaration, data: Unit) {
-    if (property.isAnnotationPresent(GraphQLFieldIgnore::class)) return
+    if (property.isAnnotationPresent(GraphQLInputFieldIgnore::class)) {
+      logger.info("$property is annotated with @GraphQLInputFieldIgnore, skipping")
+      return
+    }
 
     val ksType = property.type.resolve()
     val isEnum = ksType.asKSClassDeclaration().classKind == ClassKind.ENUM_CLASS

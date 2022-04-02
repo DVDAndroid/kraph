@@ -35,8 +35,8 @@ class AnnotationProcessor(
 
   override fun process(resolver: Resolver): List<KSAnnotated> {
     options["kraph.packageName"].let {
-      requireNotNull(it) { "kraph.packageName is not set" }
-      genPackageName = it
+//      requireNotNull(it) { "kraph.packageName is not set" }
+      genPackageName = "com.test"
     }
     pResolver = resolver
 

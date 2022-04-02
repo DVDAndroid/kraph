@@ -45,7 +45,7 @@ internal class GraphQLTypeVisitor(
 
   override fun visitPropertyDeclaration(property: KSPropertyDeclaration, data: Unit) {
     if (property.isAnnotationPresent(GraphQLFieldIgnore::class)) {
-      logger.warn("$property is annotated with @GraphQLFieldIgnore, skipping")
+      logger.info("$property is annotated with @GraphQLFieldIgnore, skipping")
       return
     }
 
