@@ -2,6 +2,7 @@ package com.dvdandroid.kraph.ksp
 
 import com.dvdandroid.kraph.ksp.annotations.GraphQLInputType
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
+import com.dvdandroid.kraph.ksp.annotations.GraphQLTypeWrapper
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
@@ -35,15 +36,17 @@ class AnnotationProcessor(
 
   override fun process(resolver: Resolver): List<KSAnnotated> {
     options["kraph.packageName"].let {
-//      requireNotNull(it) { "kraph.packageName is not set" }
-      genPackageName = "com.test"
+      requireNotNull(it) { "kraph.packageName is not set" }
+      genPackageName = it
     }
     pResolver = resolver
 
     val graphQLTypes = resolver.getSymbolsWithAnnotation(GraphQLType::class.qualifiedName!!)
     val graphQLInputTypes = resolver.getSymbolsWithAnnotation(GraphQLInputType::class.qualifiedName!!)
+    val graphQLTypesWrappers = resolver.getSymbolsWithAnnotation(GraphQLTypeWrapper::class.qualifiedName!!)
     val unableToProcess1 = graphQLTypes.filterNot { it.validate() }
     val unableToProcess2 = graphQLInputTypes.filterNot { it.validate() }
+    val unableToProcess3 = graphQLTypesWrappers.filterNot { it.validate() }
 
     graphQLTypes.filter { it is KSClassDeclaration && it.validate() }
       .forEach { it.accept(GraphQLTypeVisitor(codeGenerator, logger), Unit) }
@@ -51,7 +54,10 @@ class AnnotationProcessor(
     graphQLInputTypes.filter { it is KSClassDeclaration && it.validate() }
       .forEach { it.accept(GraphQLInputTypeVisitor(codeGenerator, logger), Unit) }
 
-    return (unableToProcess1 + unableToProcess2).distinct().toList()
+    graphQLTypesWrappers.filter { it is KSClassDeclaration && it.validate() }
+      .forEach { it.accept(GraphQLWrapperVisitor(codeGenerator, logger), Unit) }
+
+    return (unableToProcess1 + unableToProcess2 + unableToProcess3).distinct().toList()
   }
 
 }
