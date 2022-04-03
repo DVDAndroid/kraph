@@ -1,8 +1,10 @@
 package com.dvdandroid.kraph.ksp
 
 import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.genPackageName
+import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.pResolver
 import com.dvdandroid.kraph.ksp.annotations.GraphQLTypeWrapper
 import com.google.devtools.ksp.getAnnotationsByType
+import com.google.devtools.ksp.getKotlinClassByName
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.*
@@ -35,7 +37,11 @@ internal class GraphQLWrapperClassBuilder(
         ).initializer(fieldName)
           .build()
       )
-      .addAnnotation(ClassName("kotlinx.serialization", "Serializable"))
+      .apply {
+        pResolver.getKotlinClassByName("kotlinx.serialization.Serializable")?.toClassName()?.let {
+          addAnnotation(it)
+        }
+      }
       .build()
 
     return FileSpec.builder(genPackageName, className)
