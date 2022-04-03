@@ -6,6 +6,7 @@ import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSType
+import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import me.lazmaid.kraph.Kraph
@@ -33,16 +34,28 @@ internal class GraphQLTypeClassBuilder(
 
     private val fun_field_object = FunSpec.builder("fieldObject")
       .addParameter("name", String::class)
-      .addParameter(ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
-        .defaultValue("null")
-        .build())
-      .addParameter(ParameterSpec.Companion.builder("args", Map::class.parameterizedBy(String::class, Any::class).copy(nullable = true))
-        .defaultValue("null")
-        .build())
+      .addParameter(
+        ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
+          .defaultValue("null")
+          .build()
+      )
+      .addParameter(
+        ParameterSpec.Companion.builder(
+          "args",
+          Map::class.parameterizedBy(String::class, Any::class).copy(nullable = true)
+        )
+          .defaultValue("null")
+          .build()
+      )
       .addParameter("builder", field_block_import)
       .addStatement("fieldBuilder.field(name, alias, args, builder)")
       .build()
 
+    private val fun_inline_fragment = FunSpec.builder("inlineFragment")
+      .addParameter("on", String::class)
+      .addParameter("builder", field_block_import)
+      .addStatement("fieldBuilder.inlineFragment(on, builder)")
+      .build()
   }
 
   fun build(): FileSpec {
@@ -53,14 +66,18 @@ internal class GraphQLTypeClassBuilder(
     val className1 = ClassName(genPackageName, generatedClassName)
     val klass = TypeSpec.classBuilder(className1)
       .addKdoc("Builder for class [${classDeclaration.qualifiedName?.asString()}]")
-      .primaryConstructor(FunSpec.constructorBuilder()
-        .addParameter("fieldBuilder", Kraph.FieldBuilder::class, KModifier.PRIVATE)
-        .addModifiers(KModifier.PRIVATE)
-        .build())
-      .addProperty(PropertySpec.builder("fieldBuilder", Kraph.FieldBuilder::class)
-        .initializer("fieldBuilder")
-        .addModifiers(KModifier.PRIVATE)
-        .build())
+      .primaryConstructor(
+        FunSpec.constructorBuilder()
+          .addParameter("fieldBuilder", Kraph.FieldBuilder::class, KModifier.PRIVATE)
+          .addModifiers(KModifier.INTERNAL)
+          .build()
+      )
+      .addProperty(
+        PropertySpec.builder("fieldBuilder", Kraph.FieldBuilder::class)
+          .initializer("fieldBuilder")
+          .addModifiers(KModifier.PRIVATE)
+          .build()
+      )
       .addFunction(fun_field)
       .addFunction(fun_field_object)
       .addType(
@@ -92,64 +109,116 @@ internal class GraphQLTypeClassBuilder(
               ).build()
             ).build()
           ).build()
-      ).apply {
-        objects.forEach { (name, type) ->
-          val ksClassDeclaration = type.declaration as KSClassDeclaration
-          val isGraphQLType = ksClassDeclaration.isAnnotationPresent(GraphQLType::class)
+      )
 
-          if (isGraphQLType) {
-            val receiverClassName = "${ksClassDeclaration.simpleName.asString()}GraphQLBuilder"
-            val companionObjectFunName = ksClassDeclaration.simpleName.asString().replaceFirstChar(Char::lowercase)
+    onSealed(klass)
 
-            val receiver = ClassName(genPackageName, receiverClassName)
-            val extensionMethod = MemberName("$genPackageName.$receiverClassName.Companion", companionObjectFunName, isExtension = true)
+    objects.forEach { (name, type) ->
+      val ksClassDeclaration = type.declaration as KSClassDeclaration
+      val isGraphQLType = ksClassDeclaration.isAnnotationPresent(GraphQLType::class)
 
-            addFunction(FunSpec.builder(name)
-              .addParameter(ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
+      if (isGraphQLType) {
+        val receiverClassName = "${ksClassDeclaration.simpleName.asString()}GraphQLBuilder"
+        val companionObjectFunName = ksClassDeclaration.simpleName.asString().replaceFirstChar(Char::lowercase)
+
+        val receiver = ClassName(genPackageName, receiverClassName)
+        val extensionMethod =
+          MemberName("$genPackageName.$receiverClassName.Companion", companionObjectFunName, isExtension = true)
+
+        klass.addFunction(
+          FunSpec.builder(name)
+            .addParameter(
+              ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
                 .defaultValue("null")
-                .build())
-              .addParameter(ParameterSpec.Companion.builder("args", Map::class.parameterizedBy(String::class, Any::class).copy(nullable = true))
-                .defaultValue("null")
-                .build())
-              .addParameter(ParameterSpec.builder("block", LambdaTypeName.get(
-                receiver = receiver,
-                returnType = Unit::class.asTypeName()
-              )).build())
-              .returns(Unit::class)
-              .addKdoc("Builder for [${classDeclaration.qualifiedName?.asString()}.$name]")
-              .addStatement(
-                "return fieldBuilder.%M(%S, alias, args, block)",
-                extensionMethod,
-                name,
+                .build()
+            )
+            .addParameter(
+              ParameterSpec.Companion.builder(
+                "args",
+                Map::class.parameterizedBy(String::class, Any::class).copy(nullable = true)
+              ).defaultValue("null").build()
+            )
+            .addParameter(
+              ParameterSpec.builder(
+                "block", LambdaTypeName.get(
+                  receiver = receiver,
+                  returnType = Unit::class.asTypeName()
+                )
               ).build()
             )
-          } else {
-            addProperty(PropertySpec.builder(name, Unit::class)
-              .addKdoc("Builder for [${classDeclaration.qualifiedName?.asString()}.$name]")
-              .delegate("lazy { field(%S) }", name)
-              .build()
-            )
-            addFunction(FunSpec.builder(name)
-              .addKdoc("Builder for [${classDeclaration.qualifiedName?.asString()}.$name]")
-              .addParameter(ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
+            .returns(Unit::class)
+            .addKdoc("Builder for [${classDeclaration.qualifiedName?.asString()}.$name]")
+            .addStatement(
+              "return fieldBuilder.%M(%S, alias, args, block)",
+              extensionMethod,
+              name,
+            ).build()
+        )
+      } else {
+        klass.addProperty(
+          PropertySpec.builder(name, Unit::class)
+            .addKdoc("Builder for [${classDeclaration.qualifiedName?.asString()}.$name]")
+            .delegate("lazy { field(%S) }", name)
+            .build()
+        )
+        klass.addFunction(
+          FunSpec.builder(name)
+            .addKdoc("Builder for [${classDeclaration.qualifiedName?.asString()}.$name]")
+            .addParameter(
+              ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
                 .defaultValue("null")
-                .build())
-              .addParameter(ParameterSpec.Companion.builder("args", Map::class.parameterizedBy(String::class, Any::class).copy(nullable = true))
-                .defaultValue("null")
-                .build())
-              .returns(Unit::class)
-              .addStatement(
-                "return field(%S, alias, args)",
-                name,
-              ).build()
+                .build()
             )
-          }
-        }
-      }.build()
+            .addParameter(
+              ParameterSpec.Companion.builder(
+                "args",
+                Map::class.parameterizedBy(String::class, Any::class).copy(nullable = true)
+              ).defaultValue("null").build()
+            )
+            .returns(Unit::class)
+            .addStatement(
+              "return field(%S, alias, args)",
+              name,
+            ).build()
+        )
+      }
+    }
 
     return FileSpec.builder(genPackageName, generatedClassName)
-      .addType(klass)
+      .addType(klass.build())
       .build()
+  }
+
+  private fun onSealed(klass: TypeSpec.Builder) {
+    if (Modifier.SEALED in classDeclaration.modifiers) {
+      klass.addFunction(fun_inline_fragment)
+      classDeclaration.getSealedSubclasses().forEach {
+        val className = it.simpleName.asString()
+        val generatedClassName = "${className}GraphQLBuilder"
+        val firstLowerCase = className.replaceFirstChar(Char::lowercase)
+        val className1 = ClassName(genPackageName, generatedClassName)
+        klass.addFunction(
+          FunSpec.builder(firstLowerCase)
+            .addParameter(
+              ParameterSpec.builder(
+                "block", LambdaTypeName.get(
+                  receiver = className1,
+                  returnType = Unit::class.asTypeName()
+                )
+              ).build()
+            ).addCode(
+              CodeBlock.builder().add(
+                format = """
+                  |inlineFragment(%S) {
+                  |   %L(this).block()
+                  |}
+                """.trimMargin(),
+                args = arrayOf(className, generatedClassName)
+              ).build()
+            ).build()
+        )
+      }
+    }
   }
 
 }

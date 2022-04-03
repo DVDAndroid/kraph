@@ -40,6 +40,4 @@ tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>>().all {
 
 dependencies {
   add("kspMetadata", project(":ksp-processor"))
-  add("kspJvm", project(":ksp-processor"))
-  add("kspJs", project(":ksp-processor"))
 }

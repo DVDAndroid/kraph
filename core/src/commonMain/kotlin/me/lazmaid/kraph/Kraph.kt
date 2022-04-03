@@ -60,7 +60,12 @@ class Kraph(f: Kraph.() -> Unit) {
         }
 
         fun fragment(name: String) {
-            fragments[name]?.invoke(this) ?: throw NoSuchFragmentException("No fragment named \"$name\" has been defined.")
+            fragments[name]?.invoke(this)
+                ?: throw NoSuchFragmentException("No fragment named \"$name\" has been defined.")
+        }
+
+        fun inlineFragment(on: String, builder: FieldBlock) {
+            addField("... on $on", null, null, builder)
         }
 
         fun variable(name: String, type: String, jsonValue: String): KraphVariable =
@@ -68,9 +73,11 @@ class Kraph(f: Kraph.() -> Unit) {
                 variables.variables[name] = it
             }
 
-        fun cursorConnection(name: String, first: Int = -1, last: Int = -1,
-                             before: String? = null, after: String? = null,
-                             builder: CursorBlock) {
+        fun cursorConnection(
+            name: String, first: Int = -1, last: Int = -1,
+            before: String? = null, after: String? = null,
+            builder: CursorBlock
+        ) {
             val argsMap = linkedMapOf<String, Any>()
             if (first != -1) argsMap["first"] = first
             if (last != -1) argsMap["last"] = last

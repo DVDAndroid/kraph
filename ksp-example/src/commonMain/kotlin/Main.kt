@@ -2,6 +2,7 @@
 
 import com.dvdandroid.kraph.ksp.annotations.*
 import com.test.AddressGraphQLBuilder.Companion.address
+import com.test.DeviceGraphQLBuilder.Companion.device
 import com.test.UserGraphQLBuilder.Companion.user
 import me.lazmaid.kraph.Kraph
 
@@ -16,6 +17,11 @@ fun example(): String = Kraph {
     }
     address {
       city
+    }
+    device("devices") {
+      androidDevice {
+        model
+      }
     }
   }
 }.toGraphQueryString()
@@ -45,3 +51,15 @@ data class InputUser(
   @GraphQLInputFieldIgnore
   val x: String = "X",
 )
+
+@GraphQLType
+sealed class Device {
+  abstract val type: String
+}
+
+@GraphQLType
+data class AndroidDevice(
+  val model: String,
+) : Device() {
+  override val type: String = "android"
+}

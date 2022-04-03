@@ -21,8 +21,8 @@ internal class GraphQLTypeVisitor(
       return logger.error("@GraphQLType must target classes with qualified names", classDeclaration)
     }
 
-    if (Modifier.DATA !in classDeclaration.modifiers) {
-      return logger.error("@GraphQLType cannot target non-data class $qualifiedName", classDeclaration)
+    if (Modifier.DATA !in classDeclaration.modifiers && Modifier.SEALED !in classDeclaration.modifiers) {
+      return logger.error("@GraphQLType cannot target non-data and non-sealed class $qualifiedName", classDeclaration)
     }
 
     if (classDeclaration.typeParameters.any()) {
@@ -36,7 +36,7 @@ internal class GraphQLTypeVisitor(
         it.accept(this, Unit)
       }
 
-    if (objects.isEmpty()) return
+    if (Modifier.DATA in classDeclaration.modifiers && objects.isEmpty()) return
 
     GraphQLTypeClassBuilder(classDeclaration, objects, logger)
       .build()

@@ -5,6 +5,7 @@ class ExampleTest {
 
   @Test
   fun builder() {
+    //language=GraphQL
     assertEquals(expected = """query {
   user {
     id
@@ -15,6 +16,11 @@ class ExampleTest {
   }
   address {
     city
+  }
+  devices {
+    ... on AndroidDevice {
+      model
+    }
   }
 }""", actual = example())
   }
