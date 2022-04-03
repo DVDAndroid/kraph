@@ -19,8 +19,8 @@ internal class GraphQLWrapperVisitor(
       return logger.error("@GraphQLTypeWrapper must target classes with qualified names", classDeclaration)
     }
 
-    if (Modifier.DATA !in classDeclaration.modifiers) {
-      return logger.error("@GraphQLTypeWrapper cannot target non-data class $qualifiedName", classDeclaration)
+    if (Modifier.DATA !in classDeclaration.modifiers && Modifier.SEALED !in classDeclaration.modifiers) {
+      return logger.error("@GraphQLType cannot target non-data and non-sealed class $qualifiedName", classDeclaration)
     }
 
     if (classDeclaration.typeParameters.any()) {
