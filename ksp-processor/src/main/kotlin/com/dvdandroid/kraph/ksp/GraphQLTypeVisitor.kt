@@ -1,8 +1,10 @@
 package com.dvdandroid.kraph.ksp
 
 import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.okBuiltIns
+import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.pResolver
 import com.dvdandroid.kraph.ksp.annotations.GraphQLFieldIgnore
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
+import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
@@ -54,14 +56,10 @@ internal class GraphQLTypeVisitor(
             || property.isAnnotationPresent(GraphQLType::class)
             || property.findOverridee()?.isAnnotationPresent(GraphQLType::class) ?: false
 
-    val isCollection = "Set" in ksType.asKSClassDeclaration().simpleName.asString() ||
-            "List" in ksType.asKSClassDeclaration().simpleName.asString()
-
-// todo fixme
-//    val isCollection = ksType.asKSClassDeclaration()
-//      .getAllSuperTypes()
-//      .toSet()
-//      .firstOrNull { it.starProjection() in setOf(builtIns.iterableType, builtIns.arrayType) }
+    val isCollection = ksType.asKSClassDeclaration()
+      .getAllSuperTypes()
+      .toSet()
+      .any { it.starProjection() in setOf(pResolver.builtIns.iterableType, pResolver.builtIns.arrayType) }
 
     val ksClassListArgType = ksType.arguments.firstOrNull()?.type?.resolve()
 

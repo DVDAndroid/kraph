@@ -2,6 +2,7 @@ package com.dvdandroid.kraph.ksp
 
 import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.asKSClassDeclaration
 import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.pResolver
+import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSType
 import com.squareup.kotlinpoet.ClassName
@@ -21,14 +22,17 @@ internal class GraphQLInputTypeFunBuilder(
     val args = objects.map { (k, v) ->
       val isString = v.makeNotNullable() == pResolver.builtIns.stringType
       val isEnum = v.asKSClassDeclaration().classKind == ClassKind.ENUM_CLASS
-      val isIterable = "List" in v.asKSClassDeclaration().simpleName.asString()
-              || "Set" in v.asKSClassDeclaration().simpleName.asString()
+      val isCollection = v.asKSClassDeclaration()
+        .getAllSuperTypes()
+        .toSet()
+        .any { it.starProjection() in setOf(pResolver.builtIns.iterableType, pResolver.builtIns.arrayType) }
+
       val isNullable = v.isMarkedNullable
 
       buildString {
         if (isNullable) {
           append("if ($k == null")
-          if (isIterable) {
+          if (isCollection) {
             append(" || $k.isEmpty()")
           }
           append(") null else ")
@@ -36,7 +40,7 @@ internal class GraphQLInputTypeFunBuilder(
         append(""""$k" to $k""")
         append(when {
           isString || isEnum -> ""
-          isIterable -> ".map { it.toString() }"
+          isCollection -> ".map { it.toString() }"
           else -> ".toString()"
         })
       }
