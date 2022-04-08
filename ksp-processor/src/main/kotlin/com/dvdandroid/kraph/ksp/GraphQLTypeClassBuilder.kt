@@ -68,7 +68,7 @@ internal class GraphQLTypeClassBuilder(
       .addKdoc("Builder for class [${classDeclaration.qualifiedName?.asString()}]")
       .primaryConstructor(
         FunSpec.constructorBuilder()
-          .addParameter("fieldBuilder", Kraph.FieldBuilder::class, KModifier.PRIVATE)
+          .addParameter("fieldBuilder", Kraph.FieldBuilder::class)
           .addModifiers(KModifier.INTERNAL)
           .build()
       )

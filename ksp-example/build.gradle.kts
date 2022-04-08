@@ -30,14 +30,9 @@ kotlin {
 // Generate common code with ksp instead of per-platform, hopefully this won't be needed in the future.
 // https://github.com/google/ksp/issues/567
 kotlin.sourceSets.commonMain {
-  kotlin.srcDir("build/generated/ksp/commonMain/kotlin")
-}
-tasks.withType<org.jetbrains.kotlin.gradle.dsl.KotlinCompile<*>>().all {
-  if (name != "kspKotlinMetadata") {
-    dependsOn("kspKotlinMetadata")
-  }
+  kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
 }
 
 dependencies {
-  add("kspMetadata", project(":ksp-processor"))
+  add("kspCommonMainMetadata", project(":ksp-processor"))
 }
