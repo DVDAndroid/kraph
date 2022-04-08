@@ -36,3 +36,7 @@ kotlin.sourceSets.commonMain {
 dependencies {
   add("kspCommonMainMetadata", project(":ksp-processor"))
 }
+
+ksp {
+  arg("kraph.packageName", "com.test")
+}
