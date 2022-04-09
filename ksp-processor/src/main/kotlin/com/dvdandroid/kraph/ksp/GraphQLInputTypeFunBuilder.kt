@@ -5,6 +5,7 @@ import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.pResolver
 import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSType
+import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
@@ -46,6 +47,11 @@ internal class GraphQLInputTypeFunBuilder(
       }
     }
     val function = FunSpec.builder("asHashMap")
+      .addAnnotation(
+        AnnotationSpec.builder(Suppress::class)
+          .addMember(""""ObjectPropertyName", "RedundantVisibilityModifier", "unused", "RedundantUnitReturnType"""")
+          .build()
+      )
       .returns(Map::class.parameterizedBy(String::class, Any::class))
       .receiver(ClassName(packageName, className))
       .addStatement("val pairs = listOfNotNull(%L).toTypedArray()", args.joinToString(",\n"))

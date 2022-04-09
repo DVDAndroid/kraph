@@ -42,7 +42,9 @@ internal class GraphQLTypeVisitor(
 
     GraphQLTypeClassBuilder(classDeclaration, objects, logger)
       .build()
-      .writeTo(codeGenerator = codeGenerator, aggregating = false)
+      .forEach {
+        it.writeTo(codeGenerator = codeGenerator, aggregating = false)
+      }
   }
 
   override fun visitPropertyDeclaration(property: KSPropertyDeclaration, data: Unit) {

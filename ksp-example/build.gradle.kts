@@ -30,7 +30,8 @@ kotlin {
 // Generate common code with ksp instead of per-platform, hopefully this won't be needed in the future.
 // https://github.com/google/ksp/issues/567
 kotlin.sourceSets.commonMain {
-  kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+  kotlin.srcDir("build/generated/ksp/common/main/kotlin")
+  kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin") // for ide
 }
 
 dependencies {

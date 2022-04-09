@@ -23,6 +23,11 @@ internal class GraphQLWrapperClassBuilder(
     val fieldName = wrapperAnnotation.outFieldName
 
     val klass = TypeSpec.classBuilder(ClassName(genPackageName, className))
+      .addAnnotation(
+        AnnotationSpec.builder(Suppress::class)
+          .addMember(""""ObjectPropertyName", "RedundantVisibilityModifier", "unused", "RedundantUnitReturnType"""")
+          .build()
+      )
       .addModifiers(KModifier.DATA)
       .addKdoc("Builder for class [${classDeclaration.qualifiedName?.asString()}]")
       .primaryConstructor(

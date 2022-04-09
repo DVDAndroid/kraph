@@ -1,6 +1,7 @@
 package com.dvdandroid.kraph.ksp
 
 import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.genPackageName
+import com.dvdandroid.kraph.ksp.annotations.GraphQLInputFieldIgnore
 import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.KSPLogger
@@ -9,6 +10,7 @@ import com.google.devtools.ksp.symbol.KSType
 import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
+import com.squareup.kotlinpoet.ksp.toClassName
 import me.lazmaid.kraph.Kraph
 
 @Suppress("PrivatePropertyName")
@@ -58,13 +60,18 @@ internal class GraphQLTypeClassBuilder(
       .build()
   }
 
-  fun build(): FileSpec {
+  fun build(): List<FileSpec> {
     val className = classDeclaration.simpleName.asString()
     val generatedClassName = "${className}GraphQLBuilder"
     val firstLowerCase = className.replaceFirstChar(Char::lowercase)
 
     val className1 = ClassName(genPackageName, generatedClassName)
     val klass = TypeSpec.classBuilder(className1)
+      .addAnnotation(
+        AnnotationSpec.builder(Suppress::class)
+          .addMember(""""ObjectPropertyName", "RedundantVisibilityModifier", "unused", "MemberVisibilityCanBePrivate", "RedundantUnitReturnType"""")
+          .build()
+      )
       .addKdoc("Builder for class [${classDeclaration.qualifiedName?.asString()}]")
       .primaryConstructor(
         FunSpec.constructorBuilder()
@@ -184,9 +191,12 @@ internal class GraphQLTypeClassBuilder(
       }
     }
 
-    return FileSpec.builder(genPackageName, generatedClassName)
-      .addType(klass.build())
-      .build()
+    return listOf(
+      FileSpec.builder(genPackageName, generatedClassName)
+        .addType(klass.build())
+        .build(),
+      classExt()
+    )
   }
 
   private fun onSealed(klass: TypeSpec.Builder) {
@@ -220,5 +230,20 @@ internal class GraphQLTypeClassBuilder(
       }
     }
   }
+
+  private fun classExt() =
+    FileSpec.builder(classDeclaration.packageName.asString(), classDeclaration.simpleName.asString() + "Exts")
+      .addProperty(
+        PropertySpec.builder("__typename", String::class)
+          .addAnnotation(GraphQLInputFieldIgnore::class)
+          .addAnnotation(
+            AnnotationSpec.builder(Suppress::class)
+              .addMember(""""ObjectPropertyName", "RedundantVisibilityModifier", "unused"""")
+              .build()
+          )
+          .receiver(classDeclaration.toClassName())
+          .getter(FunSpec.getterBuilder().addStatement("return this::class.simpleName!!").build())
+          .build()
+      ).build()
 
 }
