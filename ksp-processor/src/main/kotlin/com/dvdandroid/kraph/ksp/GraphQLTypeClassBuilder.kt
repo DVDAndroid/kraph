@@ -24,12 +24,19 @@ internal class GraphQLTypeClassBuilder(
 
     private val fun_field = FunSpec.builder("field")
       .addParameter("name", String::class)
-      .addParameter(ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
-        .defaultValue("null")
-        .build())
-      .addParameter(ParameterSpec.Companion.builder("args", Map::class.parameterizedBy(String::class, Any::class).copy(nullable = true))
-        .defaultValue("null")
-        .build())
+      .addParameter(
+        ParameterSpec.builder("alias", String::class.asTypeName().copy(nullable = true))
+          .defaultValue("null")
+          .build()
+      )
+      .addParameter(
+        ParameterSpec.Companion.builder(
+          "args",
+          Map::class.parameterizedBy(String::class, Any::class).copy(nullable = true)
+        )
+          .defaultValue("null")
+          .build()
+      )
       .addStatement("fieldBuilder.field(name, alias, args, builder = null)")
       .build()
 
@@ -104,7 +111,9 @@ internal class GraphQLTypeClassBuilder(
             .addParameter(ParameterSpec.builder("block", LambdaTypeName.get(
               receiver = className1,
               returnType = Unit::class.asTypeName()
-            )).build())
+            )
+            ).build()
+            )
             .addCode(
               CodeBlock.builder().add(
                 format = """
@@ -118,9 +127,9 @@ internal class GraphQLTypeClassBuilder(
           ).build()
       )
 
-    onSealed(klass)
-
-    objects.forEach { (name, type) ->
+    if (Modifier.SEALED in classDeclaration.modifiers) {
+      onSealed(klass)
+    } else objects.forEach { (name, type) ->
       val ksClassDeclaration = type.declaration as KSClassDeclaration
       val isGraphQLType = ksClassDeclaration.isAnnotationPresent(GraphQLType::class)
 
@@ -200,34 +209,32 @@ internal class GraphQLTypeClassBuilder(
   }
 
   private fun onSealed(klass: TypeSpec.Builder) {
-    if (Modifier.SEALED in classDeclaration.modifiers) {
-      klass.addFunction(fun_inline_fragment)
-      classDeclaration.getSealedSubclasses().forEach {
-        val className = it.simpleName.asString()
-        val generatedClassName = "${className}GraphQLBuilder"
-        val firstLowerCase = className.replaceFirstChar(Char::lowercase)
-        val className1 = ClassName(genPackageName, generatedClassName)
-        klass.addFunction(
-          FunSpec.builder(firstLowerCase)
-            .addParameter(
-              ParameterSpec.builder(
-                "block", LambdaTypeName.get(
-                  receiver = className1,
-                  returnType = Unit::class.asTypeName()
-                )
-              ).build()
-            ).addCode(
-              CodeBlock.builder().add(
-                format = """
+    klass.addFunction(fun_inline_fragment)
+    classDeclaration.getSealedSubclasses().forEach {
+      val className = it.simpleName.asString()
+      val generatedClassName = "${className}GraphQLBuilder"
+      val firstLowerCase = className.replaceFirstChar(Char::lowercase)
+      val className1 = ClassName(genPackageName, generatedClassName)
+      klass.addFunction(
+        FunSpec.builder(firstLowerCase)
+          .addParameter(
+            ParameterSpec.builder(
+              "block", LambdaTypeName.get(
+                receiver = className1,
+                returnType = Unit::class.asTypeName()
+              )
+            ).build()
+          ).addCode(
+            CodeBlock.builder().add(
+              format = """
                   |inlineFragment(%S) {
                   |   %L(this).block()
                   |}
                 """.trimMargin(),
-                args = arrayOf(className, generatedClassName)
-              ).build()
+              args = arrayOf(className, generatedClassName)
             ).build()
-        )
-      }
+          ).build()
+      )
     }
   }
 
