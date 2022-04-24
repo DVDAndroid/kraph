@@ -43,6 +43,8 @@ data class Address(
   val test: String?
 )
 
+class CustomType
+
 @GraphQLInputType
 data class InputUser(
   val name: String,
@@ -50,6 +52,7 @@ data class InputUser(
   val test: String? = null,
   @GraphQLInputFieldIgnore
   val x: String = "X",
+  val y: CustomType
 )
 
 @GraphQLType

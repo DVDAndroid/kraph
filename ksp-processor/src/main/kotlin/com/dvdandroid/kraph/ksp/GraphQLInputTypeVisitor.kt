@@ -1,10 +1,6 @@
 package com.dvdandroid.kraph.ksp
 
-import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.asKSClassDeclaration
-import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.okBuiltIns
-import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.pResolver
 import com.dvdandroid.kraph.ksp.annotations.GraphQLInputFieldIgnore
-import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.KSPLogger
@@ -53,14 +49,6 @@ internal class GraphQLInputTypeVisitor(
       return
     }
 
-    val ksType = property.type.resolve()
-    val isEnum = ksType.asKSClassDeclaration().classKind == ClassKind.ENUM_CLASS
-    val isCollection = ksType.asKSClassDeclaration()
-      .getAllSuperTypes()
-      .toSet()
-      .any { it.starProjection() in setOf(pResolver.builtIns.iterableType, pResolver.builtIns.arrayType) }
-    if (ksType.makeNotNullable() in okBuiltIns || isEnum || isCollection) {
-      objects += property.simpleName.asString() to ksType
-    }
+    objects += property.simpleName.asString() to property.type.resolve()
   }
 }
