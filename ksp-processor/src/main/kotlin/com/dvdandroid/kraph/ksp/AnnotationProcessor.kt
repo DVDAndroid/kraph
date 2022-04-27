@@ -28,6 +28,9 @@ class AnnotationProcessor(
         pResolver.builtIns.booleanType,
         pResolver.builtIns.doubleType,
         pResolver.builtIns.floatType,
+        pResolver.builtIns.shortType,
+        pResolver.builtIns.longType,
+        pResolver.builtIns.charType,
       )
     }
 
