@@ -44,23 +44,23 @@ class AnnotationProcessor(
     }
     pResolver = resolver
 
-    val graphQLTypes = resolver.getSymbolsWithAnnotation(GraphQLType::class.qualifiedName!!)
-    val graphQLInputTypes = resolver.getSymbolsWithAnnotation(GraphQLInputType::class.qualifiedName!!)
-    val graphQLTypesWrappers = resolver.getSymbolsWithAnnotation(GraphQLTypeWrapper::class.qualifiedName!!)
-    val unableToProcess1 = graphQLTypes.filterNot { it.validate() }
-    val unableToProcess2 = graphQLInputTypes.filterNot { it.validate() }
-    val unableToProcess3 = graphQLTypesWrappers.filterNot { it.validate() }
+    val (graphQLTypes, graphQLTypesFail) = resolver.getSymbolsWithAnnotation(GraphQLType::class.qualifiedName!!)
+      .partition { it.validate() }
+    val (graphQLInputTypes, graphQLInputTypesFail) = resolver.getSymbolsWithAnnotation(GraphQLInputType::class.qualifiedName!!)
+      .partition { it.validate() }
+    val (graphQLTypesWrappers, graphQLTypesWrappersFail) = resolver.getSymbolsWithAnnotation(GraphQLTypeWrapper::class.qualifiedName!!)
+      .partition { it.validate() }
 
-    graphQLTypes.filter { it is KSClassDeclaration && it.validate() }
+    graphQLTypes.filterIsInstance<KSClassDeclaration>()
       .forEach { it.accept(GraphQLTypeVisitor(codeGenerator, logger), Unit) }
 
-    graphQLInputTypes.filter { it is KSClassDeclaration && it.validate() }
+    graphQLInputTypes.filterIsInstance<KSClassDeclaration>()
       .forEach { it.accept(GraphQLInputTypeVisitor(codeGenerator, logger), Unit) }
 
-    graphQLTypesWrappers.filter { it is KSClassDeclaration && it.validate() }
+    graphQLTypesWrappers.filterIsInstance<KSClassDeclaration>()
       .forEach { it.accept(GraphQLWrapperVisitor(codeGenerator, logger), Unit) }
 
-    return (unableToProcess1 + unableToProcess2 + unableToProcess3).distinct().toList()
+    return (graphQLTypesFail + graphQLInputTypesFail + graphQLTypesWrappersFail).distinct().toList()
   }
 
 }
