@@ -1,6 +1,5 @@
 package com.dvdandroid.kraph.ksp
 
-import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.genPackageName
 import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.okBuiltIns
 import com.dvdandroid.kraph.ksp.AnnotationProcessor.Companion.pResolver
 import com.dvdandroid.kraph.ksp.annotations.GraphQLFieldIgnore
@@ -8,6 +7,7 @@ import com.dvdandroid.kraph.ksp.annotations.GraphQLType
 import com.google.devtools.ksp.getAllSuperTypes
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.*
 import com.squareup.kotlinpoet.ksp.writeTo
@@ -46,10 +46,7 @@ internal class GraphQLTypeVisitor(
       .forEach {
         it.writeTo(
           codeGenerator = codeGenerator,
-          originatingKSFiles = pResolver.getDeclarationsFromPackage(genPackageName).mapNotNull(
-            KSDeclaration::containingFile
-          ).toList(),
-          aggregating = true,
+          dependencies = Dependencies(false, classDeclaration.containingFile!!),
         )
       }
   }

@@ -3,6 +3,7 @@ package com.dvdandroid.kraph.ksp
 import com.dvdandroid.kraph.ksp.annotations.GraphQLTypeWrapper
 import com.google.devtools.ksp.isAnnotationPresent
 import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSVisitorVoid
@@ -34,7 +35,10 @@ internal class GraphQLWrapperVisitor(
 
     GraphQLWrapperClassBuilder(classDeclaration, logger)
       .build()
-      .writeTo(codeGenerator = codeGenerator, aggregating = false)
+      .writeTo(
+        codeGenerator = codeGenerator,
+        dependencies = Dependencies(false, classDeclaration.containingFile!!),
+      )
   }
 
 }
